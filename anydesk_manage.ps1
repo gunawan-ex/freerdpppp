@@ -34,6 +34,8 @@ function Find-AnyDesk {
 
 function Get-AnyDeskID($exe) {
     try {
+        Start-Service -Name "AnyDesk" -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 3
         $id = & $exe --get-id 2>&1
         return $id.Trim()
     } catch {
