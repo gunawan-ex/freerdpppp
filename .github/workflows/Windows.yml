@@ -24,13 +24,11 @@ jobs:
       - name: Setup Tunnel RDP via Pinggy
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://github.com/Pinggy-io/pinggy-cli/releases/latest/download/pinggy_windows_amd64.zip" -OutFile "pinggy.zip"
-          Expand-Archive pinggy.zip -DestinationPath . -Force
+          # Jalankan tunnel TCP port 3389 via OpenSSH bawaan Windows
+          $sshArgs = "-o StrictHostKeyChecking=no -p 443 -R0:localhost:3389 tcp@a.pinggy.io"
+          Start-Process -FilePath "ssh.exe" -ArgumentList $sshArgs -RedirectStandardOutput "pinggy.log" -RedirectStandardError "pinggy_err.log" -WindowStyle Hidden
 
-          # Jalankan tunnel TCP ke port 3389 tanpa token
-          Start-Process -FilePath ".\pinggy.exe" -ArgumentList "tcp --port 3389 --log=stdout" -RedirectStandardOutput "pinggy.log" -RedirectStandardError "pinggy_err.log" -WindowStyle Hidden
-
-          # Tunggu dan ambil alamat URL tunnel
+          # Tunggu dan ekstrak alamat URL host:port
           $rdpUrl = $null
           for ($i = 0; $i -lt 15; $i++) {
               Start-Sleep -Seconds 2
