@@ -9,23 +9,61 @@ jobs:
     runs-on: windows-latest
     
     steps:
-      # Mengambil seluruh berkas dari repo kamu sendiri
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Downloading & Installing Essentials
         run: cmd /c Downloads.bat
 
-      - name: Enable RDP and open PORt
+      - name: Enable RDP and open Port
         run: cmd /c enable_rdp_and_open_port.bat
 
       - name: Get RDP info
         run: cmd /c get_public_ip.bat
-        
+
+      - name: Setup Tunnel RDP via Pinggy
+        shell: pwsh
+        env:
+          PINGGY_TOKEN: ${{ secrets.PINGGY_TOKEN }}
+        run: |
+          # Jalankan tunnel TCP port 3389 via OpenSSH bawaan menggunakan token akun
+          $sshArgs = "-T -o StrictHostKeyChecking=no -p 443 -R0:localhost:3389 $($env:PINGGY_TOKEN)+tcp@a.pinggy.io"
+          Start-Process -FilePath "ssh.exe" -ArgumentList $sshArgs -RedirectStandardOutput "pinggy.log" -RedirectStandardError "pinggy_err.log" -WindowStyle Hidden
+
+          # Tunggu URL tunnel dibuat dan diekstrak
+          $rdpUrl = $null
+          for ($i = 0; $i -lt 15; $i++) {
+              Start-Sleep -Seconds 2
+              if (Test-Path "pinggy.log") {
+                  $content = Get-Content "pinggy.log" -Raw
+                  if ($content -match 'tcp://([a-zA-Z0-9\.\-]+:\d+)') {
+                      $rdpUrl = $matches[1]
+                      break
+                  }
+              }
+          }
+
+          if ($rdpUrl) {
+              Write-Output "=========================================="
+              Write-Output "ALAMAT RDP KAMU : $rdpUrl"
+              Write-Output "USER           : runneradmin"
+              Write-Output "=========================================="
+          } else {
+              Write-Output "Menampilkan isi log Pinggy:"
+              if (Test-Path "pinggy.log") { Get-Content "pinggy.log" }
+              if (Test-Path "pinggy_err.log") { Get-Content "pinggy_err.log" }
+              exit 1
+          }
+
       - name: Execute anydesk
         shell: pwsh
         run: |
-          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\anydesk_manage.ps1 -Password nk0ckhun9
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\anydesk_manage.ps1 -Password Awanophile*123
 
       - name: Keep Alive Loop
-        run: cmd /c loop.bat
+        shell: pwsh
+        run: |
+          Write-Output "Runner aktif. Menjaga sesi tetap menyala..."
+          while ($true) {
+              Start-Sleep -Seconds 60
+          }
