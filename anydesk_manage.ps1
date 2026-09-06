@@ -25,7 +25,7 @@ function Find-AnyDesk {
     $paths = @()
     if ($AnyDeskPath) { $paths += $AnyDeskPath }
     $paths += Join-Path $env:ProgramFiles "AnyDesk\AnyDesk.exe"
-    $paths += Join-Path $env:"ProgramFiles(x86)" "AnyDesk\AnyDesk.exe"
+    $paths += Join-Path ${env:ProgramFiles(x86)} "AnyDesk\AnyDesk.exe"
     foreach ($p in $paths) {
         if (Test-Path $p) { return $p }
     }
