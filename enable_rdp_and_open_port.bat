@@ -4,7 +4,6 @@ REM enable_rdp_and_open_port.bat
 REM Run as Administrator
 REM -------------------------------
 
-REM --- CONFIG ---
 set RDP_PORT=3389
 
 echo Enabling Remote Desktop...
@@ -30,4 +29,3 @@ echo Done.
 echo - Remote Desktop is enabled.
 echo - Firewall rule "Allow RDP TCP %RDP_PORT%" added.
 echo Note: If you changed the port, connect using ip:port (e.g. 192.0.2.1:%RDP_PORT%).
-pause
