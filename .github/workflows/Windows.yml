@@ -21,43 +21,10 @@ jobs:
       - name: Get RDP info
         run: cmd /c get_public_ip.bat
 
-      - name: Setup Tunnel RDP via Playit
-        shell: pwsh
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/playit-cloud/playit-agent/releases/download/v0.15.26/playit-windows-x86_64-signed.exe" -OutFile "playit.exe"
-          
-          # Jalankan Playit di latar belakang
-          Start-Process -FilePath ".\playit.exe" -RedirectStandardOutput "playit.log" -RedirectStandardError "playit_err.log" -WindowStyle Hidden
-          
-          # Tunggu tautan klaim / status tunnel
-          $claimUrl = $null
-          for ($i = 0; $i -lt 15; $i++) {
-              Start-Sleep -Seconds 2
-              if (Test-Path "playit.log") {
-                  $content = Get-Content "playit.log" -Raw
-                  if ($content -match '(https://playit\.gg/claim/[a-zA-Z0-9]+)') {
-                      $claimUrl = $matches[1]
-                      break
-                  }
-              }
-          }
-
-          Write-Output "=========================================="
-          if ($claimUrl) {
-              Write-Output "KLIK TAUTAN INI UNTUK MENGAKTIFKAN RDP (GRATIS TANPA KARTU):"
-              Write-Output "$claimUrl"
-              Write-Output "Setelah diklik: Tambahkan Tunnel -> Pilih Custom -> TCP port 3389"
-          } else {
-              Write-Output "Isi Log Playit:"
-              if (Test-Path "playit.log") { Get-Content "playit.log" }
-          }
-          Write-Output "USER           : runneradmin"
-          Write-Output "=========================================="
-
       - name: Execute anydesk
         shell: pwsh
         run: |
-          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\anydesk_manage.ps1 -Password nk0ckhun9
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\anydesk_manage.ps1 -Password Awanophile*123
 
       - name: Keep Alive Loop
         shell: pwsh
