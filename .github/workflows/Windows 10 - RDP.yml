@@ -1,4 +1,4 @@
-name: Windows - RDP
+name: Windows - Chrome Remote Desktop
 
 on:
   workflow_dispatch:
@@ -21,42 +21,19 @@ jobs:
       - name: Get RDP info
         run: cmd /c get_public_ip.bat
 
-      - name: Setup Tunnel RDP via Pinggy
+      - name: Setup Chrome Remote Desktop
         shell: pwsh
+        env:
+          CRD_AUTH_CODE: ${{ secrets.CRD_AUTH_CODE }}
         run: |
-          # Jalankan tunnel TCP port 3389 menggunakan token Pinggy
-          $token = "q90HQskwOoO"
-          $sshArgs = "-T -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -p 443 -R0:localhost:3389 ${token}+tcp@a.pinggy.io"
-          Start-Process -FilePath "ssh.exe" -ArgumentList $sshArgs -RedirectStandardOutput "pinggy.log" -RedirectStandardError "pinggy_err.log" -WindowStyle Hidden
+          # Unduh dan pasang service host Chrome Remote Desktop
+          Invoke-WebRequest -Uri "https://dl.google.com/edgedl/chrome-remote-desktop/chromeremotedesktophost.msi" -OutFile "crd.msi"
+          Start-Process msiexec.exe -ArgumentList "/i crd.msi /qn" -Wait
+          Start-Sleep -Seconds 5
 
-          # Tunggu URL tunnel dibuat dan diekstrak
-          $rdpUrl = $null
-          for ($i = 0; $i -lt 20; $i++) {
-              Start-Sleep -Seconds 2
-              if (Test-Path "pinggy.log") {
-                  $content = Get-Content "pinggy.log" -Raw
-                  if ($content -match '([a-zA-Z0-9\.\-]+\.pinggy\.io:\d+)') {
-                      $rdpUrl = $matches[1]
-                      break
-                  }
-                  if ($content -match 'tcp://([a-zA-Z0-9\.\-]+:\d+)') {
-                      $rdpUrl = $matches[1]
-                      break
-                  }
-              }
-          }
-
-          if ($rdpUrl) {
-              Write-Output "=========================================="
-              Write-Output "ALAMAT RDP KAMU : $rdpUrl"
-              Write-Output "USER           : runneradmin"
-              Write-Output "=========================================="
-          } else {
-              Write-Output "Menampilkan isi log Pinggy:"
-              if (Test-Path "pinggy.log") { Get-Content "pinggy.log" }
-              if (Test-Path "pinggy_err.log") { Get-Content "pinggy_err.log" }
-              exit 1
-          }
+          # Eksekusi registrasi host dengan autentikasi dari Secret
+          $hostExe = "$env:ProgramFiles(x86)\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe"
+          & $hostExe --code="$env:CRD_AUTH_CODE" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$env:COMPUTERNAME --pin=123456
 
       - name: Execute anydesk
         shell: pwsh
