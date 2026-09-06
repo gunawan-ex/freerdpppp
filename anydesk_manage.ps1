@@ -35,9 +35,26 @@ function Find-AnyDesk {
 function Get-AnyDeskID($exe) {
     try {
         Start-Service -Name "AnyDesk" -ErrorAction SilentlyContinue
-        Start-Sleep -Seconds 3
-        $id = & $exe --get-id 2>&1
-        return $id.Trim()
+        Start-Sleep -Seconds 5
+        
+        # Coba ambil ID hingga 5 kali percobaan
+        for ($i = 0; $i -lt 5; $i++) {
+            $id = & $exe --get-id 2>&1
+            if ($id -match '^\d+$') {
+                return $id.Trim()
+            }
+            Start-Sleep -Seconds 3
+        }
+
+        # Cadangan: Baca langsung dari berkas konfigurasi AnyDesk
+        $confPath = "$env:ProgramData\AnyDesk\system.conf"
+        if (Test-Path $confPath) {
+            $match = Select-String -Path $confPath -Pattern "ad.anynet.id=(\d+)"
+            if ($match -and $match.Matches.Groups[1].Value) {
+                return $match.Matches.Groups[1].Value
+            }
+        }
+        return "error"
     } catch {
         return "error"
     }
@@ -48,7 +65,8 @@ function Set-AnyDeskPassword($exe, $pwd) {
     try {
         Set-Content -Path $tmp -Value $pwd -Encoding ASCII -Force
         $cmd = "type `"$tmp`" | `"$exe`" --set-password"
-        Start-Process -FilePath "cmd.exe" -ArgumentList "/c", $cmd -NoNewWindow -Wait -WindowStyle Hidden
+        # Cukup gunakan -NoNewWindow -Wait tanpa -WindowStyle
+        Start-Process -FilePath "cmd.exe" -ArgumentList "/c", $cmd -NoNewWindow -Wait
         return $true
     } catch {
         return $false
