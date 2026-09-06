@@ -5,15 +5,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-curl -L -o anydesk_manage.ps1 https://huuhieu17.github.io/freerdp/anydesk_manage.ps1
-curl -L -o enable_rdp_and_open_port.bat https://huuhieu17.github.io/freerdp/enable_rdp_and_open_port.bat
-curl -L -o get_public_ip.bat https://huuhieu17.github.io/freerdp/get_public_ip.bat
-curl -L -o loop.bat https://huuhieu17.github.io/freerdp/loop.bat
-curl -L -o show.bat https://huuhieu17.github.io/freerdp/show.bat
-
 pip install pyautogui psutil --quiet
-
-curl -s -L -o time.py https://huuhieu17.github.io/freerdp/timelimit.py
 
 powershell -Command "Invoke-WebRequest 'https://www.rarlab.com/rar/winrar-x64-621.exe' -OutFile 'C:\Users\Public\Desktop\Winrar-setup.exe'"
 C:\Users\Public\Desktop\Winrar-setup.exe /S
@@ -22,7 +14,7 @@ del C:\Users\Public\Desktop\Winrar-setup.exe
 powershell -Command "Invoke-WebRequest 'https://github.com/chieunhatnang/VM-QuickConfig/releases/download/1.6.1/VMQuickConfig.exe' -OutFile 'C:\Users\Public\Desktop\VMQuickConfig.exe'"
 
 powershell -Command "Invoke-WebRequest 'https://download.anydesk.com/AnyDesk.exe' -OutFile 'C:\Users\Public\Desktop\AnyDesk.exe'"
-C:\Users\Public\Desktop\AnyDesk.exe --install "C:\Program Files (x86)\AnyDesk" --start-with-win --silent
+"C:\Users\Public\Desktop\AnyDesk.exe" --install "C:\Program Files (x86)\AnyDesk" --start-with-win --silent
 
 del /q "C:\Users\Public\Desktop\Epic Games Launcher.lnk" >nul 2>&1
 del /q "C:\Users\Public\Desktop\Unity Hub.lnk" >nul 2>&1
