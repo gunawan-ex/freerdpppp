@@ -22,17 +22,17 @@ jobs:
         run: cmd /c get_public_ip.bat
 
       - name: Setup Tunnel RDP via Ngrok
+        shell: pwsh
         env:
           NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
-        shell: pwsh
         run: |
           Invoke-WebRequest -Uri "https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-windows-amd64.zip" -OutFile "ngrok.zip"
           Expand-Archive ngrok.zip -DestinationPath .
           .\ngrok.exe config add-authtoken $env:NGROK_AUTH_TOKEN
           Start-Process -FilePath ".\ngrok.exe" -ArgumentList "tcp 3389" -WindowStyle Hidden
-          Start-Sleep -Seconds 5
-          $tunnels = (Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/tunnels").tunnels
-          $rdpUrl = $tunnels[0].public_url -replace "tcp://", ""
+          Start-Sleep -Seconds 7
+          $response = Invoke-RestMethod -Uri "http://127.0.0.1:4040/api/tunnels"
+          $rdpUrl = $response.tunnels[0].public_url -replace "tcp://", ""
           Write-Output "=========================================="
           Write-Output "ALAMAT RDP KAMU : $rdpUrl"
           Write-Output "USER           : runneradmin"
