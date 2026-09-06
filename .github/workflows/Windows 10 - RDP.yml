@@ -9,10 +9,12 @@ jobs:
     runs-on: windows-latest
     
     steps:
+      # Mengambil seluruh berkas dari repo kamu sendiri
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Downloading & Installing Essentials
-        run: |
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/huuhieu17/freerdp/refs/heads/main/Downloads.bat" -OutFile "Downloads.bat"
-          cmd /c Downloads.bat
+        run: cmd /c Downloads.bat
 
       - name: Enable RDP and open PORt
         run: cmd /c enable_rdp_and_open_port.bat
@@ -25,7 +27,5 @@ jobs:
         run: |
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\anydesk_manage.ps1 -Password nk0ckhun9
 
-      - name: Time Counter
-        run: python time.py
-
-
+      - name: Keep Alive Loop
+        run: cmd /c loop.bat
