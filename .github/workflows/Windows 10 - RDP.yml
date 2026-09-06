@@ -23,19 +23,22 @@ jobs:
 
       - name: Setup Tunnel RDP via Pinggy
         shell: pwsh
-        env:
-          PINGGY_TOKEN: ${{ secrets.PINGGY_TOKEN }}
         run: |
-          # Jalankan tunnel TCP port 3389 via OpenSSH bawaan menggunakan token akun
-          $sshArgs = "-T -o StrictHostKeyChecking=no -p 443 -R0:localhost:3389 $($env:PINGGY_TOKEN)+tcp@a.pinggy.io"
+          # Jalankan tunnel TCP port 3389 menggunakan token Pinggy
+          $token = "q90HQskwOoO"
+          $sshArgs = "-T -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -p 443 -R0:localhost:3389 ${token}+tcp@a.pinggy.io"
           Start-Process -FilePath "ssh.exe" -ArgumentList $sshArgs -RedirectStandardOutput "pinggy.log" -RedirectStandardError "pinggy_err.log" -WindowStyle Hidden
 
           # Tunggu URL tunnel dibuat dan diekstrak
           $rdpUrl = $null
-          for ($i = 0; $i -lt 15; $i++) {
+          for ($i = 0; $i -lt 20; $i++) {
               Start-Sleep -Seconds 2
               if (Test-Path "pinggy.log") {
                   $content = Get-Content "pinggy.log" -Raw
+                  if ($content -match '([a-zA-Z0-9\.\-]+\.pinggy\.io:\d+)') {
+                      $rdpUrl = $matches[1]
+                      break
+                  }
                   if ($content -match 'tcp://([a-zA-Z0-9\.\-]+:\d+)') {
                       $rdpUrl = $matches[1]
                       break
