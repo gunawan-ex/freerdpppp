@@ -26,14 +26,19 @@ jobs:
         env:
           CRD_AUTH_CODE: ${{ secrets.CRD_AUTH_CODE }}
         run: |
-          # Unduh dan pasang service host Chrome Remote Desktop
           Invoke-WebRequest -Uri "https://dl.google.com/edgedl/chrome-remote-desktop/chromeremotedesktophost.msi" -OutFile "crd.msi"
           Start-Process msiexec.exe -ArgumentList "/i crd.msi /qn" -Wait
           Start-Sleep -Seconds 5
 
-          # Eksekusi registrasi host dengan autentikasi dari Secret
-          $hostExe = "$env:ProgramFiles(x86)\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe"
-          & $hostExe --code="$env:CRD_AUTH_CODE" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$env:COMPUTERNAME --pin=123456
+          # Cari lokasi executable remoting_start_host.exe secara otomatis
+          $hostExe = (Get-ChildItem -Path "${env:ProgramFiles(x86)}\Google\Chrome Remote Desktop" -Filter "remoting_start_host.exe" -Recurse | Select-Object -First 1).FullName
+
+          if (-not $hostExe) {
+              $hostExe = (Get-ChildItem -Path "$env:ProgramFiles\Google\Chrome Remote Desktop" -Filter "remoting_start_host.exe" -Recurse | Select-Object -First 1).FullName
+          }
+
+          Write-Output "Lokasi CRD Host: $hostExe"
+          & "$hostExe" --code="$env:CRD_AUTH_CODE" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$env:COMPUTERNAME --pin=123456
 
       - name: Execute anydesk
         shell: pwsh
