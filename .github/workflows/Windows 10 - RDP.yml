@@ -21,6 +21,27 @@ jobs:
       - name: Get RDP info
         run: cmd /c get_public_ip.bat
 
+      - name: Configure Desktop Environment
+        shell: pwsh
+        run: |
+          # 1. Sembunyikan ikon desktop (Hide Desktop Icons)
+          $explorerKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+          Set-ItemProperty -Path $explorerKey -Name "HideIcons" -Value 1
+
+          # 2. Aktifkan auto-hide taskbar (StuckRects3 byte ke-9 diubah dari 02 jadi 03)
+          $stuckPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3"
+          if (Test-Path $stuckPath) {
+              $val = (Get-ItemProperty -Path $stuckPath).Settings
+              $val[8] = 3
+              Set-ItemProperty -Path $stuckPath -Name "Settings" -Value $val
+          }
+
+          # 3. Muat ulang Explorer agar perubahan langsung aktif di tampilan desktop
+          Stop-Process -Name explorer -Force
+          Start-Sleep -Seconds 2
+          Start-Process explorer.exe
+
+
       - name: Setup Chrome Remote Desktop
         shell: pwsh
         env:
