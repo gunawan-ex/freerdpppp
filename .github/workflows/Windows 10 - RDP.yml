@@ -12,8 +12,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Cache User Folders (Desktop & Documents)
-        uses: actions/cache@v4
+      # 1. Restore Cache di Awal
+      - name: Restore User Folders (Desktop & Documents)
+        uses: actions/cache/restore@v4
         with:
           path: |
             C:\Users\runneradmin\Desktop
@@ -28,11 +29,11 @@ jobs:
       - name: Configure Desktop Environment
         shell: pwsh
         run: |
-          # 1. Sembunyikan ikon desktop (Hide Desktop Icons)
+          # Sembunyikan ikon desktop
           $explorerKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
           Set-ItemProperty -Path $explorerKey -Name "HideIcons" -Value 1
 
-          # 2. Aktifkan auto-hide taskbar (StuckRects3 byte ke-9 diubah dari 02 jadi 03)
+          # Aktifkan auto-hide taskbar
           $stuckPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3"
           if (Test-Path $stuckPath) {
               $val = (Get-ItemProperty -Path $stuckPath).Settings
@@ -40,7 +41,7 @@ jobs:
               Set-ItemProperty -Path $stuckPath -Name "Settings" -Value $val
           }
 
-          # 3. Muat ulang Explorer agar perubahan langsung aktif
+          # Muat ulang Explorer
           Stop-Process -Name explorer -Force
           Start-Sleep -Seconds 2
           Start-Process explorer.exe
@@ -54,7 +55,6 @@ jobs:
           Start-Process msiexec.exe -ArgumentList "/i crd.msi /qn" -Wait
           Start-Sleep -Seconds 5
 
-          # Cari lokasi executable remoting_start_host.exe secara otomatis
           $hostExe = (Get-ChildItem -Path "${env:ProgramFiles(x86)}\Google\Chrome Remote Desktop" -Filter "remoting_start_host.exe" -Recurse | Select-Object -First 1).FullName
 
           if (-not $hostExe) {
@@ -71,3 +71,13 @@ jobs:
           while ($true) {
               Start-Sleep -Seconds 60
           }
+
+      # 2. Save Cache di Akhir (Pasti Jalan Meskipun Di-Cancel)
+      - name: Save User Folders (Desktop & Documents)
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            C:\Users\runneradmin\Desktop
+            C:\Users\runneradmin\Documents
+          key: rdp-workspace-cache-${{ github.run_id }}
