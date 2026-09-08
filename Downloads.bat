@@ -13,8 +13,6 @@ del C:\Users\Public\Desktop\Winrar-setup.exe
 
 powershell -Command "Invoke-WebRequest 'https://github.com/chieunhatnang/VM-QuickConfig/releases/download/1.6.1/VMQuickConfig.exe' -OutFile 'C:\Users\Public\Desktop\VMQuickConfig.exe'"
 
-powershell -Command "Invoke-WebRequest 'https://download.anydesk.com/AnyDesk.exe' -OutFile 'C:\Users\Public\Desktop\AnyDesk.exe'"
-"C:\Users\Public\Desktop\AnyDesk.exe" --install "C:\Program Files (x86)\AnyDesk" --start-with-win --silent
 
 del /q "C:\Users\Public\Desktop\Epic Games Launcher.lnk" >nul 2>&1
 del /q "C:\Users\Public\Desktop\Unity Hub.lnk" >nul 2>&1
