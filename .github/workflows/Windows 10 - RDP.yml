@@ -12,14 +12,18 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Cache User Folders (Desktop & Documents)
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:\Users\runneradmin\Desktop
+            C:\Users\runneradmin\Documents
+          key: rdp-workspace-cache-${{ github.run_id }}
+          restore-keys: |
+            rdp-workspace-cache-
+
       - name: Downloading & Installing Essentials
         run: cmd /c Downloads.bat
-
-      - name: Enable RDP and open Port
-        run: cmd /c enable_rdp_and_open_port.bat
-
-      - name: Get RDP info
-        run: cmd /c get_public_ip.bat
 
       - name: Configure Desktop Environment
         shell: pwsh
@@ -36,11 +40,10 @@ jobs:
               Set-ItemProperty -Path $stuckPath -Name "Settings" -Value $val
           }
 
-          # 3. Muat ulang Explorer agar perubahan langsung aktif di tampilan desktop
+          # 3. Muat ulang Explorer agar perubahan langsung aktif
           Stop-Process -Name explorer -Force
           Start-Sleep -Seconds 2
           Start-Process explorer.exe
-
 
       - name: Setup Chrome Remote Desktop
         shell: pwsh
@@ -61,15 +64,10 @@ jobs:
           Write-Output "Lokasi CRD Host: $hostExe"
           & "$hostExe" --code="$env:CRD_AUTH_CODE" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$env:COMPUTERNAME --pin=123456
 
-      - name: Execute anydesk
-        shell: pwsh
-        run: |
-          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\anydesk_manage.ps1 -Password Awanophile*123
-
       - name: Keep Alive Loop
         shell: pwsh
         run: |
-          Write-Output "Runner aktif. Menjaga sesi tetap menyala..."
+          Write-Output "Runner aktif. Terhubung via Chrome Remote Desktop..."
           while ($true) {
               Start-Sleep -Seconds 60
           }
