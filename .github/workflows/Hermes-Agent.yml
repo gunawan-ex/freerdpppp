@@ -1,4 +1,4 @@
-name: Windows - Chrome Remote Desktop
+name: Windows - Hermes Agent
 
 on:
   workflow_dispatch:
@@ -22,21 +22,6 @@ jobs:
           key: rdp-workspace-cache-${{ github.run_id }}
           restore-keys: |
             rdp-workspace-cache-
-
-      # 2. Setup Python & Sync Memori Supabase (Awal Booting)
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install Supabase Library
-        run: pip install supabase
-
-      - name: Pull Memory from Supabase
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: python sync_memory.py pull
 
       # 3. Downloads & Configurations
       - name: Downloading & Installing Essentials
