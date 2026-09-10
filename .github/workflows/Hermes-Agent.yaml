@@ -1,0 +1,121 @@
+name: Windows - Chrome Remote Desktop
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Start Building...
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 1. Restore Cache
+      - name: Restore User Folders (Desktop & Documents)
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            C:\Users\runneradmin\Desktop
+            C:\Users\runneradmin\Documents
+          key: rdp-workspace-cache-${{ github.run_id }}
+          restore-keys: |
+            rdp-workspace-cache-
+
+      # 2. Setup Python & Sync Memori Supabase (Awal Booting)
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Supabase Library
+        run: pip install supabase
+
+      - name: Pull Memory from Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python sync_memory.py pull
+
+      # 3. Downloads & Configurations
+      - name: Downloading & Installing Essentials
+        run: cmd /c Downloads.bat
+
+      - name: Configure Desktop Environment
+        shell: pwsh
+        run: |
+          # Sembunyikan ikon desktop
+          $explorerKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+          Set-ItemProperty -Path $explorerKey -Name "HideIcons" -Value 1
+
+          # Aktifkan auto-hide taskbar
+          $stuckPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StuckRects3"
+          if (Test-Path $stuckPath) {
+              $val = (Get-ItemProperty -Path $stuckPath).Settings
+              $val[8] = 3
+              Set-ItemProperty -Path $stuckPath -Name "Settings" -Value $val
+          }
+
+          # Muat ulang Explorer
+          Stop-Process -Name explorer -Force
+          Start-Sleep -Seconds 2
+          Start-Process explorer.exe
+
+      - name: Install & Connect Tailscale
+        shell: pwsh
+        env:
+          TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
+        run: |
+          Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe" -OutFile "tailscale-setup.exe"
+          Start-Process -FilePath ".\tailscale-setup.exe" -ArgumentList "/quiet" -Wait
+
+          $env:Path += ";C:\Program Files\Tailscale"
+          tailscale up --authkey=$env:TAILSCALE_AUTHKEY --hostname="github-runner-vm"
+          
+          Write-Output "Tailscale berhasil terhubung!"
+          tailscale ip -4
+
+      - name: Setup Chrome Remote Desktop
+        shell: pwsh
+        env:
+          CRD_AUTH_CODE: ${{ secrets.CRD_AUTH_CODE }}
+        run: |
+          Invoke-WebRequest -Uri "https://dl.google.com/edgedl/chrome-remote-desktop/chromeremotedesktophost.msi" -OutFile "crd.msi"
+          Start-Process msiexec.exe -ArgumentList "/i crd.msi /qn" -Wait
+          Start-Sleep -Seconds 5
+
+          $hostExe = (Get-ChildItem -Path "${env:ProgramFiles(x86)}\Google\Chrome Remote Desktop" -Filter "remoting_start_host.exe" -Recurse | Select-Object -First 1).FullName
+
+          if (-not $hostExe) {
+              $hostExe = (Get-ChildItem -Path "$env:ProgramFiles\Google\Chrome Remote Desktop" -Filter "remoting_start_host.exe" -Recurse | Select-Object -First 1).FullName
+          }
+
+          Write-Output "Lokasi CRD Host: $hostExe"
+          & "$hostExe" --code="$env:CRD_AUTH_CODE" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$env:COMPUTERNAME --pin=123456
+
+      - name: Keep Alive Loop
+        shell: pwsh
+        run: |
+          Write-Output "Runner aktif. Terhubung via Chrome Remote Desktop..."
+          while ($true) {
+              Start-Sleep -Seconds 60
+          }
+
+      # 4. Save Memori ke Supabase (Saat Workflow Di-Cancel / Selesai)
+      - name: Push Memory to Supabase
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python sync_memory.py push
+
+      # 5. Save Cache
+      - name: Save User Folders (Desktop & Documents)
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            C:\Users\runneradmin\Desktop
+            C:\Users\runneradmin\Documents
+          key: rdp-workspace-cache-${{ github.run_id }}
